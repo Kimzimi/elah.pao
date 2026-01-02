@@ -28,6 +28,22 @@
       "dest": "/public/admin.js"
     },
     {
+      "src": "/payment.html",
+      "dest": "/public/payment.html"
+    },
+    {
+      "src": "/admin-login.html",
+      "dest": "/public/admin-login.html"
+    },
+    {
+      "src": "/dashboard.html",
+      "dest": "/public/dashboard.html"
+    },
+    {
+      "src": "/admin.html",
+      "dest": "/public/admin.html"
+    },
+    {
       "src": "/assets/(.*)",
       "dest": "/assets/$1"
     },
