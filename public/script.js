@@ -27,24 +27,33 @@ async function loadSettings() {
 
 // แสดงข้อความร้านปิด
 function showClosedMessage() {
-    const menuSection = document.querySelector('.menu-items');
+    const menuSection = document.querySelector('.menu-section');
     const customerInfo = document.querySelector('.customer-info');
     const summarySection = document.querySelector('.order-summary');
 
+    // ซ่อนเมนูทั้งหมด
     if (menuSection) {
         menuSection.innerHTML = `
-            <div style="text-align: center; padding: 40px; background: #fff3cd; border-radius: 15px;">
-                <h3 style="color: #856404;">🔒 ร้านปิดชั่วคราว</h3>
-                <p style="color: #856404; margin-top: 10px;">ขออภัย ขณะนี้ร้านปิดให้บริการชั่วคราว</p>
-                <p style="color: #856404;">กรุณาลองใหม่อีกครั้งในภายหลัง</p>
+            <div style="text-align: center; padding: 60px 40px; background: linear-gradient(135deg, #fff3cd 0%, #ffe6a7 100%); border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+                <div style="font-size: 4em; margin-bottom: 20px;">🔒</div>
+                <h2 style="color: #856404; margin-bottom: 15px; font-size: 1.8em;">ร้านปิดชั่วคราว</h2>
+                <p style="color: #856404; font-size: 1.2em; margin-bottom: 10px;">ขออภัย ขณะนี้ร้านปิดให้บริการชั่วคราว</p>
+                <div style="margin-top: 30px; padding: 20px; background: white; border-radius: 15px; display: inline-block;">
+                    <p style="color: #28a745; font-size: 1.3em; font-weight: bold; margin: 0;">⏰ เวลาทำการ</p>
+                    <p style="color: #333; font-size: 1.5em; font-weight: bold; margin: 10px 0 0 0;">09:00 - 18:00 น.</p>
+                    <p style="color: #666; font-size: 1.1em; margin: 5px 0 0 0;">ทุกวัน</p>
+                </div>
+                <p style="color: #856404; margin-top: 25px; font-size: 1.1em;">กรุณาลองใหม่อีกครั้งในเวลาทำการ</p>
             </div>
         `;
     }
 
+    // ซ่อนฟอร์มข้อมูลลูกค้า
     if (customerInfo) {
         customerInfo.style.display = 'none';
     }
 
+    // ซ่อนสรุปรายการ
     if (summarySection) {
         summarySection.style.display = 'none';
     }
