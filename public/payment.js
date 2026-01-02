@@ -65,10 +65,12 @@ document.getElementById('slip-file').addEventListener('change', function(e) {
 
 // ยืนยันการชำระเงิน
 async function confirmPayment() {
+    const paymentConfirmed = document.getElementById('payment-confirmed').checked;
     const slipFile = document.getElementById('slip-file').files[0];
 
-    if (!slipFile) {
-        alert('กรุณาแนบสลิปการโอนเงิน');
+    // ตรวจสอบว่าติ้ก checkbox แล้วหรือยัง
+    if (!paymentConfirmed) {
+        alert('กรุณาติ้ก ✅ ฉันได้ชำระเงินเรียบร้อยแล้ว');
         return;
     }
 
@@ -77,10 +79,14 @@ async function confirmPayment() {
     btn.textContent = 'กำลังส่งออเดอร์...';
 
     try {
-        // สร้าง FormData สำหรับส่งทั้งข้อมูลและไฟล์
+        // สร้าง FormData สำหรับส่งทั้งข้อมูลและไฟล์ (ถ้ามี)
         const formData = new FormData();
         formData.append('orderData', JSON.stringify(orderData));
-        formData.append('slip', slipFile);
+
+        // แนบสลิปถ้ามี (ไม่บังคับ)
+        if (slipFile) {
+            formData.append('slip', slipFile);
+        }
 
         // ส่งข้อมูลไปยัง backend
         const response = await fetch('/api/send-order', {
@@ -111,7 +117,7 @@ async function confirmPayment() {
         console.error('Error:', error);
         alert('เกิดข้อผิดพลาดในการส่งออเดอร์: ' + error.message);
         btn.disabled = false;
-        btn.textContent = 'ยืนยันการชำระเงินและส่งออเดอร์';
+        btn.textContent = 'ส่งออเดอร์';
     }
 }
 

@@ -195,14 +195,12 @@ app.post('/api/send-order', upload.single('slip'), async (req, res) => {
         const orderData = JSON.parse(req.body.orderData);
         const slipFile = req.file;
 
-        if (!slipFile) {
-            return res.status(400).json({ success: false, message: 'กรุณาแนบสลิปการโอนเงิน' });
-        }
-
         // สร้าง Order ID
         const orderId = 'ORD' + Date.now();
 
-        // บันทึกออเดอร์ลง database
+        // บันทึกออเดอร์ลง database (สลิปเป็น optional)
+        const slipPath = slipFile ? '/uploads/' + slipFile.filename : null;
+
         await sql`
             INSERT INTO orders (
                 order_number, customer_name, customer_phone,
@@ -218,7 +216,7 @@ app.post('/api/send-order', upload.single('slip'), async (req, res) => {
                 ${orderData.note || ''},
                 ${JSON.stringify(orderData.items)},
                 ${orderData.total},
-                ${'/uploads/' + slipFile.filename},
+                ${slipPath},
                 ${new Date()}
             )
         `;
@@ -316,18 +314,21 @@ app.post('/api/send-order', upload.single('slip'), async (req, res) => {
             </div>
         `;
 
-        // ส่งอีเมลพร้อมแนบสลิป
-        const slipPath = path.join(__dirname, 'public', 'uploads', slipFile.filename);
+        // ส่งอีเมล (แนบสลิปถ้ามี)
+        const attachments = [];
+        if (slipFile) {
+            const slipFilePath = path.join(__dirname, 'public', 'uploads', slipFile.filename);
+            attachments.push({
+                filename: 'slip-' + orderId + path.extname(slipFile.filename),
+                path: slipFilePath
+            });
+        }
+
         await sendEmail(
             SELLER_EMAIL,
             `🐟 ออเดอร์ใหม่ ${orderId} - ${orderData.customerName}`,
             emailHtml,
-            [
-                {
-                    filename: 'slip-' + orderId + path.extname(slipFile.filename),
-                    path: slipPath
-                }
-            ]
+            attachments
         );
 
         res.json({ success: true, message: 'ส่งออเดอร์สำเร็จ', orderId: orderId });

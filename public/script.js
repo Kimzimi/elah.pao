@@ -34,7 +34,7 @@ function showClosedMessage() {
         closedBanner.style.cssText = 'text-align: center; padding: 20px; background: linear-gradient(135deg, #fff3cd 0%, #ffe6a7 100%); border-radius: 10px; margin-bottom: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.1);';
         closedBanner.innerHTML = `
             <div style="font-size: 2em; margin-bottom: 10px;">🔒</div>
-            <h3 style="color: #856404; margin-bottom: 10px; font-size: 1.3em;">ขณะนี้ร้านปิดเวลา</h3>
+            <h3 style="color: #856404; margin-bottom: 10px; font-size: 1.3em;">ขณะนี้ร้านปิด</h3>
             <div style="display: inline-block; background: white; padding: 15px 25px; border-radius: 10px; margin-top: 10px;">
                 <p style="color: #28a745; font-size: 1.1em; font-weight: bold; margin: 0;">⏰ เวลาทำการ: 09:00 - 18:00 น. ทุกวัน</p>
             </div>
