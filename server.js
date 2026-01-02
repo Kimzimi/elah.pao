@@ -4,6 +4,7 @@ const express = require('express');
 const path = require('path');
 const multer = require('multer');
 const nodemailer = require('nodemailer');
+const axios = require('axios');
 const fs = require('fs');
 const { sql, initDatabase } = require('./db');
 const app = express();
@@ -34,6 +35,10 @@ const upload = multer({ storage: storage });
 const EMAIL_USER = 'elah.pao@gmail.com';
 const EMAIL_PASS = 'lunt pjfa xlrb wunj';
 const SELLER_EMAIL = 'elah.pao@gmail.com';    // อีเมลผู้ขาย (รับการแจ้งเตือน)
+
+// Telegram Configuration
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
+const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '';
 
 // ตั้งค่า Nodemailer
 const transporter = nodemailer.createTransport({
@@ -189,6 +194,29 @@ async function sendEmail(to, subject, html, attachments = []) {
     }
 }
 
+// ฟังก์ชันส่งข้อความ Telegram
+async function sendTelegramMessage(message) {
+    if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
+        console.log('⚠️ Telegram not configured - skipping notification');
+        return false;
+    }
+
+    try {
+        const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+        const response = await axios.post(url, {
+            chat_id: TELEGRAM_CHAT_ID,
+            text: message,
+            parse_mode: 'HTML'
+        });
+
+        console.log('✅ Telegram message sent successfully');
+        return true;
+    } catch (error) {
+        console.error('❌ Error sending Telegram message:', error.message);
+        return false;
+    }
+}
+
 // API endpoint สำหรับรับออเดอร์
 app.post('/api/send-order', upload.single('slip'), async (req, res) => {
     try {
@@ -330,6 +358,33 @@ app.post('/api/send-order', upload.single('slip'), async (req, res) => {
             emailHtml,
             attachments
         );
+
+        // ส่งแจ้งเตือนทาง Telegram
+        const telegramMessage = `
+🐟 <b>อิหล่าปลาเผา - ออเดอร์ใหม่!</b>
+
+📝 <b>Order ID:</b> ${orderId}
+👤 <b>ชื่อ:</b> ${orderData.customerName}
+📞 <b>เบอร์:</b> ${orderData.customerPhone}
+
+🕐 <b>เวลาสั่ง:</b> ${orderData.orderTime}
+⏰ <b>เวลาที่ต้องการรับ:</b> ${orderData.deliveryTime} น.
+
+${orderData.deliveryType === 'pickup' ? '🏪 รับเองที่ร้าน' : '🚚 จัดส่ง'}
+${orderData.deliveryType === 'delivery' ? `📍 <b>ที่อยู่:</b> ${orderData.deliveryAddress}` : ''}
+
+📋 <b>รายการ:</b>
+${orderData.items.map((item, i) => `${i + 1}. ${item.name} x ${item.quantity} = ${item.total} บาท`).join('\n')}
+
+💰 <b>ยอดรวม: ${orderData.total} บาท</b>
+
+${orderData.note ? `📝 <b>หมายเหตุ:</b> ${orderData.note}` : ''}
+${slipFile ? '✅ มีสลิปแนบมาด้วย' : '⚠️ ไม่มีสลิป - ลูกค้ายืนยันชำระแล้ว'}
+
+🔗 <a href="https://elah-pao.vercel.app/dashboard">เปิด Dashboard</a>
+        `.trim();
+
+        await sendTelegramMessage(telegramMessage);
 
         res.json({ success: true, message: 'ส่งออเดอร์สำเร็จ', orderId: orderId });
 
