@@ -10,52 +10,41 @@ async function loadSettings() {
         const response = await fetch('/api/settings');
         const settings = await response.json();
 
-        // ตรวจสอบว่าร้านเปิดหรือไม่
-        if (!settings.shopOpen) {
-            showClosedMessage();
-            return;
-        }
-
-        // โหลดเมนู
+        // โหลดเมนูเสมอ ไม่ว่าร้านจะเปิดหรือปิด
         if (settings.menu && settings.menu.length > 0) {
             loadMenu(settings.menu);
+        }
+
+        // ถ้าร้านปิด แสดงแบนเนอร์แจ้งเตือน
+        if (!settings.shopOpen) {
+            showClosedMessage();
         }
     } catch (error) {
         console.error('Error loading settings:', error);
     }
 }
 
-// แสดงข้อความร้านปิด
+// แสดงข้อความร้านปิด (แบนเนอร์แจ้งเตือน)
 function showClosedMessage() {
     const menuSection = document.querySelector('.menu-section');
-    const customerInfo = document.querySelector('.customer-info');
-    const summarySection = document.querySelector('.order-summary');
 
-    // ซ่อนเมนูทั้งหมด
+    // สร้างแบนเนอร์แจ้งเตือนที่ด้านบนของเมนู
     if (menuSection) {
-        menuSection.innerHTML = `
-            <div style="text-align: center; padding: 60px 40px; background: linear-gradient(135deg, #fff3cd 0%, #ffe6a7 100%); border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
-                <div style="font-size: 4em; margin-bottom: 20px;">🔒</div>
-                <h2 style="color: #856404; margin-bottom: 15px; font-size: 1.8em;">ร้านปิดชั่วคราว</h2>
-                <p style="color: #856404; font-size: 1.2em; margin-bottom: 10px;">ขออภัย ขณะนี้ร้านปิดให้บริการชั่วคราว</p>
-                <div style="margin-top: 30px; padding: 20px; background: white; border-radius: 15px; display: inline-block;">
-                    <p style="color: #28a745; font-size: 1.3em; font-weight: bold; margin: 0;">⏰ เวลาทำการ</p>
-                    <p style="color: #333; font-size: 1.5em; font-weight: bold; margin: 10px 0 0 0;">09:00 - 18:00 น.</p>
-                    <p style="color: #666; font-size: 1.1em; margin: 5px 0 0 0;">ทุกวัน</p>
-                </div>
-                <p style="color: #856404; margin-top: 25px; font-size: 1.1em;">กรุณาลองใหม่อีกครั้งในเวลาทำการ</p>
+        const closedBanner = document.createElement('div');
+        closedBanner.style.cssText = 'text-align: center; padding: 20px; background: linear-gradient(135deg, #fff3cd 0%, #ffe6a7 100%); border-radius: 10px; margin-bottom: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.1);';
+        closedBanner.innerHTML = `
+            <div style="font-size: 2em; margin-bottom: 10px;">🔒</div>
+            <h3 style="color: #856404; margin-bottom: 10px; font-size: 1.3em;">ขณะนี้ร้านปิดเวลา</h3>
+            <div style="display: inline-block; background: white; padding: 15px 25px; border-radius: 10px; margin-top: 10px;">
+                <p style="color: #28a745; font-size: 1.1em; font-weight: bold; margin: 0;">⏰ เวลาทำการ: 09:00 - 18:00 น. ทุกวัน</p>
             </div>
         `;
-    }
 
-    // ซ่อนฟอร์มข้อมูลลูกค้า
-    if (customerInfo) {
-        customerInfo.style.display = 'none';
-    }
-
-    // ซ่อนสรุปรายการ
-    if (summarySection) {
-        summarySection.style.display = 'none';
+        // แทรกแบนเนอร์ไว้ด้านบนของ <h2>เมนู</h2>
+        const menuTitle = menuSection.querySelector('h2');
+        if (menuTitle) {
+            menuSection.insertBefore(closedBanner, menuTitle);
+        }
     }
 }
 
