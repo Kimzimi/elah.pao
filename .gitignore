@@ -13,3 +13,4 @@ public/uploads/*
 
 # Assets (QR code - อาจจะมีข้อมูลส่วนตัว)
 assets/qr-payment.*
+.vercel
