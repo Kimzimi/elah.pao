@@ -1,9 +1,15 @@
+require('dotenv').config({ path: '.env.local' });
+
 const express = require('express');
 const path = require('path');
 const multer = require('multer');
 const nodemailer = require('nodemailer');
 const fs = require('fs');
+const { sql, initDatabase } = require('./db');
 const app = express();
+
+// Initialize database on startup
+initDatabase().catch(console.error);
 
 // Middleware
 app.use(express.json());
@@ -38,26 +44,127 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-// ฟังก์ชันโหลดออเดอร์จากไฟล์
-function loadOrders() {
+// =============== Database Helper Functions ===============
+
+// ฟังก์ชันดึงการตั้งค่าจาก database
+async function loadSettings() {
     try {
-        if (fs.existsSync('data/orders.json')) {
-            const data = fs.readFileSync('data/orders.json', 'utf8');
-            return JSON.parse(data);
+        const result = await sql`SELECT * FROM settings WHERE id = 1 LIMIT 1`;
+
+        if (result.length === 0) {
+            // Return default settings
+            return getDefaultSettings();
         }
+
+        const row = result[0];
+
+        // ดึงเมนูจาก database
+        const menuResult = await sql`SELECT * FROM menu WHERE available = true ORDER BY id`;
+
+        return {
+            shopOpen: row.shop_open,
+            shopName: row.shop_name,
+            shopPhone: row.shop_phone,
+            shopLocation: row.shop_location,
+            deliveryArea: row.delivery_area,
+            openingHours: {
+                start: row.opening_hours_start,
+                end: row.opening_hours_end
+            },
+            bankInfo: {
+                bank: row.bank_name,
+                accountNumber: row.bank_account_number,
+                accountName: row.bank_account_name
+            },
+            menu: menuResult.map(item => ({
+                id: item.id,
+                name: item.name,
+                price: item.price,
+                enabled: item.available
+            })),
+            adminPassword: row.admin_password,
+            closedDates: JSON.parse(row.closed_dates || '[]')
+        };
     } catch (error) {
-        console.error('Error loading orders:', error);
+        console.error('Error loading settings from database:', error);
+        return getDefaultSettings();
     }
-    return [];
 }
 
-// ฟังก์ชันบันทึกออเดอร์ลงไฟล์
-function saveOrders(orders) {
+function getDefaultSettings() {
+    return {
+        shopOpen: true,
+        shopName: "อิหล่าปลาเผา",
+        shopPhone: "093-549-6234",
+        shopLocation: "หน้าร้านทองเยาวราชนำโชค",
+        deliveryArea: "ตำบลอากาศ",
+        openingHours: {
+            start: "09:00",
+            end: "18:00"
+        },
+        bankInfo: {
+            bank: "กรุงไทย",
+            accountNumber: "4440565999",
+            accountName: "นรารักษ์ ชารัตน์"
+        },
+        menu: [
+            {
+                id: "grilled-plain",
+                name: "ปลาเผา+น้ำจิ้ม",
+                price: 120,
+                enabled: true
+            },
+            {
+                id: "grilled-veg",
+                name: "ปลาเผา+ชุดผัก+น้ำจิ้ม",
+                price: 180,
+                enabled: true
+            }
+        ],
+        adminPassword: "admin123",
+        closedDates: []
+    };
+}
+
+// ฟังก์ชันบันทึกการตั้งค่าลง database
+async function saveSettings(settings) {
     try {
-        fs.writeFileSync('data/orders.json', JSON.stringify(orders, null, 2));
+        await sql`
+            UPDATE settings SET
+                shop_open = ${settings.shopOpen},
+                shop_name = ${settings.shopName},
+                shop_phone = ${settings.shopPhone},
+                shop_location = ${settings.shopLocation},
+                delivery_area = ${settings.deliveryArea},
+                opening_hours_start = ${settings.openingHours.start},
+                opening_hours_end = ${settings.openingHours.end},
+                bank_name = ${settings.bankInfo.bank},
+                bank_account_number = ${settings.bankInfo.accountNumber},
+                bank_account_name = ${settings.bankInfo.accountName},
+                admin_password = ${settings.adminPassword},
+                closed_dates = ${JSON.stringify(settings.closedDates || [])},
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = 1
+        `;
+
+        // อัพเดทเมนูถ้ามี
+        if (settings.menu) {
+            for (const item of settings.menu) {
+                await sql`
+                    INSERT INTO menu (id, name, price, available)
+                    VALUES (${item.id}, ${item.name}, ${item.price}, ${item.enabled})
+                    ON CONFLICT (id) DO UPDATE SET
+                        name = ${item.name},
+                        price = ${item.price},
+                        available = ${item.enabled},
+                        updated_at = CURRENT_TIMESTAMP
+                `;
+            }
+        }
+
         return true;
     } catch (error) {
-        console.error('Error saving orders:', error);
+        console.error('Error saving settings:', error);
         return false;
     }
 }
@@ -95,19 +202,26 @@ app.post('/api/send-order', upload.single('slip'), async (req, res) => {
         // สร้าง Order ID
         const orderId = 'ORD' + Date.now();
 
-        // สร้างข้อมูลออเดอร์ฉบับเต็ม
-        const fullOrder = {
-            orderId: orderId,
-            ...orderData,
-            slipUrl: '/uploads/' + slipFile.filename,
-            status: 'pending',
-            createdAt: new Date().toISOString()
-        };
-
-        // บันทึกออเดอร์ลงไฟล์
-        const orders = loadOrders();
-        orders.push(fullOrder);
-        saveOrders(orders);
+        // บันทึกออเดอร์ลง database
+        await sql`
+            INSERT INTO orders (
+                order_number, customer_name, customer_phone,
+                delivery_type, delivery_time, delivery_address,
+                note, items, total, slip_path, order_time
+            ) VALUES (
+                ${orderId},
+                ${orderData.customerName},
+                ${orderData.customerPhone},
+                ${orderData.deliveryType},
+                ${orderData.deliveryTime},
+                ${orderData.deliveryAddress},
+                ${orderData.note || ''},
+                ${JSON.stringify(orderData.items)},
+                ${orderData.total},
+                ${'/uploads/' + slipFile.filename},
+                ${new Date()}
+            )
+        `;
 
         // สร้าง HTML สำหรับอีเมล
         const deliveryTypeText = orderData.deliveryType === 'pickup' ? '🏪 รับเองที่ร้าน' : '🚚 จัดส่ง';
@@ -191,7 +305,7 @@ app.post('/api/send-order', upload.single('slip'), async (req, res) => {
 
                     <div style="margin-top: 20px; text-align: center; padding: 20px; background: #f0f8ff; border-radius: 5px;">
                         <p style="margin: 0; color: #666;">เข้าสู่ Dashboard เพื่อจัดการออเดอร์</p>
-                        <a href="http://localhost:3000/dashboard" style="display: inline-block; margin-top: 10px; padding: 12px 30px; background: #667eea; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">เปิด Dashboard</a>
+                        <a href="https://elah-pao.vercel.app/dashboard" style="display: inline-block; margin-top: 10px; padding: 12px 30px; background: #667eea; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">เปิด Dashboard</a>
                     </div>
                 </div>
 
@@ -225,9 +339,30 @@ app.post('/api/send-order', upload.single('slip'), async (req, res) => {
 });
 
 // API สำหรับดึงรายการออเดอร์ทั้งหมด (สำหรับ Dashboard)
-app.get('/api/orders', (req, res) => {
-    const orders = loadOrders();
-    res.json(orders.reverse());
+app.get('/api/orders', async (req, res) => {
+    try {
+        const orders = await sql`
+            SELECT
+                id, order_number as "orderId", customer_name as "customerName",
+                customer_phone as "customerPhone", delivery_type as "deliveryType",
+                delivery_time as "deliveryTime", delivery_address as "deliveryAddress",
+                note, items, total, status, slip_path as "slipUrl",
+                order_time as "orderTime", created_at as "createdAt"
+            FROM orders
+            ORDER BY created_at DESC
+        `;
+
+        // แปลง items จาก JSONB string กลับเป็น object
+        const formattedOrders = orders.map(order => ({
+            ...order,
+            items: typeof order.items === 'string' ? JSON.parse(order.items) : order.items
+        }));
+
+        res.json(formattedOrders);
+    } catch (error) {
+        console.error('Error loading orders:', error);
+        res.status(500).json({ success: false, message: 'เกิดข้อผิดพลาด' });
+    }
 });
 
 // API สำหรับอัพเดทสถานะออเดอร์
@@ -236,19 +371,12 @@ app.post('/api/orders/:orderId/status', async (req, res) => {
         const { orderId } = req.params;
         const { status } = req.body;
 
-        const orders = loadOrders();
-        const orderIndex = orders.findIndex(o => o.orderId === orderId);
-
-        if (orderIndex === -1) {
-            return res.status(404).json({ success: false, message: 'ไม่พบออเดอร์' });
-        }
-
-        orders[orderIndex].status = status;
-        orders[orderIndex].updatedAt = new Date().toISOString();
-
-        saveOrders(orders);
-
-        // ไม่ส่งอีเมลแจ้งเตือนลูกค้า (ตามที่ร้องขอ - แจ้งเฉพาะผู้ขายตอนสั่งซื้อ)
+        await sql`
+            UPDATE orders SET
+                status = ${status},
+                updated_at = CURRENT_TIMESTAMP
+            WHERE order_number = ${orderId}
+        `;
 
         res.json({ success: true, message: 'อัพเดทสถานะสำเร็จ' });
     } catch (error) {
@@ -297,9 +425,9 @@ function isShopOpenByTime(settings) {
 }
 
 // API: Get public settings (shop status and menu)
-app.get('/api/settings', (req, res) => {
+app.get('/api/settings', async (req, res) => {
     try {
-        const settings = loadSettings();
+        const settings = await loadSettings();
 
         // ตรวจสอบว่าร้านเปิดตามเวลาหรือไม่
         const isOpen = isShopOpenByTime(settings);
@@ -318,68 +446,8 @@ app.get('/api/settings', (req, res) => {
 
 // =============== Admin System ===============
 
-// ฟังก์ชันโหลดการตั้งค่า
-function loadSettings() {
-    try {
-        if (fs.existsSync('data/settings.json')) {
-            const data = fs.readFileSync('data/settings.json', 'utf8');
-            return JSON.parse(data);
-        }
-    } catch (error) {
-        console.error('Error loading settings:', error);
-    }
-    // ค่า default
-    return {
-        shopOpen: true,
-        shopName: "อิหล่าปลาเผา",
-        shopPhone: "093-549-6234",
-        shopLocation: "หน้าร้านทองเยาวราชนำโชค",
-        deliveryArea: "ตำบลอากาศ",
-        openingHours: {
-            start: "09:00",
-            end: "18:00"
-        },
-        bankInfo: {
-            bank: "กรุงไทย",
-            accountNumber: "4440565999",
-            accountName: "นรารักษ์ ชารัตน์"
-        },
-        menu: [
-            {
-                id: "grilled-plain",
-                name: "ปลาเผา+น้ำจิ้ม",
-                price: 120,
-                enabled: true
-            },
-            {
-                id: "grilled-veg",
-                name: "ปลาเผา+ชุดผัก+น้ำจิ้ม",
-                price: 180,
-                enabled: true
-            }
-        ],
-        adminPassword: "admin123",
-        closedDates: []
-    };
-}
-
-// ฟังก์ชันบันทึกการตั้งค่า
-function saveSettings(settings) {
-    try {
-        // สร้างโฟลเดอร์ data ถ้ายังไม่มี
-        if (!fs.existsSync('data')) {
-            fs.mkdirSync('data');
-        }
-        fs.writeFileSync('data/settings.json', JSON.stringify(settings, null, 2));
-        return true;
-    } catch (error) {
-        console.error('Error saving settings:', error);
-        return false;
-    }
-}
-
 // Middleware ตรวจสอบ Admin Token
-function authAdmin(req, res, next) {
+async function authAdmin(req, res, next) {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
 
@@ -387,8 +455,9 @@ function authAdmin(req, res, next) {
         return res.status(401).json({ success: false, message: 'ไม่มี token' });
     }
 
-    // ตรวจสอบ token (ในที่นี้ใช้วิธีง่ายๆ)
-    if (token === 'admin-token-' + loadSettings().adminPassword) {
+    // ตรวจสอบ token
+    const settings = await loadSettings();
+    if (token === 'admin-token-' + settings.adminPassword) {
         next();
     } else {
         return res.status(403).json({ success: false, message: 'Token ไม่ถูกต้อง' });
@@ -396,10 +465,10 @@ function authAdmin(req, res, next) {
 }
 
 // API: Admin Login
-app.post('/api/admin/login', (req, res) => {
+app.post('/api/admin/login', async (req, res) => {
     try {
         const { password } = req.body;
-        const settings = loadSettings();
+        const settings = await loadSettings();
 
         if (password === settings.adminPassword) {
             // สร้าง token
@@ -422,9 +491,9 @@ app.post('/api/admin/login', (req, res) => {
 });
 
 // API: Get Settings
-app.get('/api/admin/settings', authAdmin, (req, res) => {
+app.get('/api/admin/settings', authAdmin, async (req, res) => {
     try {
-        const settings = loadSettings();
+        const settings = await loadSettings();
         // ไม่ส่ง password กลับไป
         delete settings.adminPassword;
         res.json(settings);
@@ -435,17 +504,17 @@ app.get('/api/admin/settings', authAdmin, (req, res) => {
 });
 
 // API: Update Settings
-app.post('/api/admin/settings', authAdmin, (req, res) => {
+app.post('/api/admin/settings', authAdmin, async (req, res) => {
     try {
         const updates = req.body;
-        const settings = loadSettings();
+        const settings = await loadSettings();
 
         // Merge updates
         Object.keys(updates).forEach(key => {
             settings[key] = updates[key];
         });
 
-        saveSettings(settings);
+        await saveSettings(settings);
 
         res.json({ success: true, message: 'บันทึกสำเร็จ' });
     } catch (error) {
@@ -503,4 +572,5 @@ app.listen(PORT, () => {
     console.log(`📱 เปิดเว็บได้ที่ http://localhost:${PORT}`);
     console.log(`🎛️ Dashboard: http://localhost:${PORT}/dashboard`);
     console.log(`📧 อีเมลแจ้งเตือน: ${SELLER_EMAIL}`);
+    console.log(`💾 Database: ${process.env.DATABASE_URL ? 'Neon Postgres ✅' : 'Not configured ⚠️'}`);
 });
