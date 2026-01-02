@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>สั่งปลาเผา</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🐟 อิหล่าปลาเผา</h1>
+            <p>สั่งปลาเผาอร่อยๆ ได้ที่นี่</p>
+            <div class="delivery-info">
+                <p>🚚 ส่งฟรีในตำบลอากาศ</p>
+                <p>📞 โทร: 093-549-6234</p>
+            </div>
+        </header>
+
+        <main>
+            <div class="menu-section">
+                <h2>เมนู</h2>
+
+                <div class="menu-category">
+                    <div class="menu-items">
+                        <div class="menu-item">
+                            <div class="item-info">
+                                <h4>ปลาเผา+น้ำจิ้ม</h4>
+                                <p class="price">120 บาท</p>
+                            </div>
+                            <div class="quantity-control">
+                                <button class="btn-minus" onclick="changeQuantity('grilled-plain', -1)">-</button>
+                                <input type="number" id="grilled-plain-qty" value="0" min="0" readonly>
+                                <button class="btn-plus" onclick="changeQuantity('grilled-plain', 1)">+</button>
+                            </div>
+                        </div>
+
+                        <div class="menu-item">
+                            <div class="item-info">
+                                <h4>ปลาเผา+ชุดผัก+น้ำจิ้ม</h4>
+                                <p class="price">180 บาท</p>
+                            </div>
+                            <div class="quantity-control">
+                                <button class="btn-minus" onclick="changeQuantity('grilled-veg', -1)">-</button>
+                                <input type="number" id="grilled-veg-qty" value="0" min="0" readonly>
+                                <button class="btn-plus" onclick="changeQuantity('grilled-veg', 1)">+</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ข้อมูลลูกค้า -->
+            <div class="customer-info">
+                <h2>ข้อมูลการสั่ง</h2>
+                <div class="form-group">
+                    <label for="customer-name">ชื่อ:</label>
+                    <input type="text" id="customer-name" placeholder="กรุณาใส่ชื่อ" required>
+                </div>
+                <div class="form-group">
+                    <label for="customer-phone">เบอร์โทร:</label>
+                    <input type="tel" id="customer-phone" placeholder="0XX-XXX-XXXX" required>
+                </div>
+                <div class="form-group">
+                    <label for="delivery-type">วิธีรับสินค้า:</label>
+                    <select id="delivery-type" onchange="toggleAddressField()">
+                        <option value="pickup">รับเองที่ร้าน อิหล่าปลาเผา (หน้าร้านทองเยาวราชนำโชค)</option>
+                        <option value="delivery">จัดส่ง</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="delivery-time">เวลาที่ต้องการรับ:</label>
+                    <select id="delivery-time" required>
+                        <option value="">-- เลือกเวลา --</option>
+                        <option value="09:00">09:00</option>
+                        <option value="09:30">09:30</option>
+                        <option value="10:00">10:00</option>
+                        <option value="10:30">10:30</option>
+                        <option value="11:00">11:00</option>
+                        <option value="11:30">11:30</option>
+                        <option value="12:00">12:00</option>
+                        <option value="12:30">12:30</option>
+                        <option value="13:00">13:00</option>
+                        <option value="13:30">13:30</option>
+                        <option value="14:00">14:00</option>
+                        <option value="14:30">14:30</option>
+                        <option value="15:00">15:00</option>
+                        <option value="15:30">15:30</option>
+                        <option value="16:00">16:00</option>
+                        <option value="16:30">16:30</option>
+                        <option value="17:00">17:00</option>
+                        <option value="17:30">17:30</option>
+                        <option value="18:00">18:00</option>
+                    </select>
+                </div>
+                <div class="form-group" id="address-group" style="display: none;">
+                    <label for="customer-address">ที่อยู่จัดส่ง หรือ ลิงก์ Google Map:</label>
+                    <textarea id="customer-address" rows="3" placeholder="ใส่ที่อยู่หรือลิงก์ Google Map"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="customer-note">หมายเหตุ (ถ้ามี):</label>
+                    <textarea id="customer-note" rows="3" placeholder="ระบุความต้องการพิเศษ"></textarea>
+                </div>
+            </div>
+
+            <!-- สรุปออเดอร์ -->
+            <div class="order-summary">
+                <h2>สรุปรายการ</h2>
+                <div id="summary-items"></div>
+                <div class="total">
+                    <strong>ยอดรวม:</strong>
+                    <span id="total-price">0</span> บาท
+                </div>
+            </div>
+
+            <!-- ปุ่มสั่ง -->
+            <button class="btn-order" onclick="placeOrder()">สั่งซื้อและชำระเงิน</button>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ชำระเงิน - ปลาเผา</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .payment-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        .payment-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .payment-header h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .order-details {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+
+        .order-details h2 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .order-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .order-total {
+            display: flex;
+            justify-content: space-between;
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #333;
+            padding-top: 15px;
+            border-top: 2px solid #333;
+            margin-top: 10px;
+        }
+
+        .qr-section {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .qr-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        #qr-code {
+            margin: 20px auto;
+            max-width: 300px;
+        }
+
+        #qr-code img {
+            width: 100%;
+            height: auto;
+        }
+
+        .payment-info {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .payment-info p {
+            margin: 5px 0;
+            color: #333;
+        }
+
+        .btn-confirm {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn-confirm:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(40, 167, 69, 0.4);
+        }
+
+        .btn-back {
+            width: 100%;
+            padding: 12px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .btn-back:hover {
+            background: #5a6268;
+        }
+
+        .success-message {
+            display: none;
+            background: #d4edda;
+            color: #155724;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .success-message h3 {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="payment-container">
+            <div class="payment-header">
+                <h1>🐟 อิหล่าปลาเผา - ชำระเงิน</h1>
+                <p>สแกน QR Code เพื่อชำระเงิน</p>
+            </div>
+
+            <div class="order-details">
+                <h2>รายละเอียดออเดอร์</h2>
+                <div id="order-items"></div>
+                <div class="order-total">
+                    <span>ยอดรวม:</span>
+                    <span id="order-total">0 บาท</span>
+                </div>
+            </div>
+
+            <div class="qr-section">
+                <h2>ชำระเงินผ่าน QR Code หรือโอนเงิน</h2>
+
+                <!-- QR Code รูปภาพ -->
+                <div id="qr-code">
+                    <img id="qr-image" src="../assets/qr-payment.jpg" alt="QR Code ชำระเงิน" style="max-width: 300px; width: 100%;"
+                         onerror="tryAlternativeQR(this)">
+                </div>
+
+                <script>
+                function tryAlternativeQR(img) {
+                    // ลองหารูป .png ถ้า .jpg ไม่เจอ
+                    if (img.src.includes('.jpg')) {
+                        img.src = '../assets/qr-payment.png';
+                    } else {
+                        // ถ้าไม่เจอทั้ง .jpg และ .png แสดงข้อมูลบัญชี
+                        img.style.display = 'none';
+                        document.getElementById('bank-info').style.display = 'block';
+                    }
+                }
+                </script>
+
+                <!-- ข้อมูลบัญชี (แสดงถ้าไม่มีรูป QR) -->
+                <div id="bank-info" style="display: none; background: #f0f8ff; padding: 20px; border-radius: 10px; margin: 20px 0;">
+                    <h3 style="color: #333; margin-bottom: 15px;">ข้อมูลบัญชีสำหรับโอนเงิน</h3>
+                    <p><strong>ธนาคาร:</strong> กรุงไทย</p>
+                    <p><strong>เลขบัญชี:</strong> 4440565999</p>
+                    <p><strong>ชื่อบัญชี:</strong> นรารักษ์ ชารัตน์</p>
+                </div>
+
+                <div class="payment-info">
+                    <p><strong>ชื่อ:</strong> <span id="customer-name"></span></p>
+                    <p><strong>เบอร์โทร:</strong> <span id="customer-phone"></span></p>
+                    <p><strong>วิธีรับสินค้า:</strong> <span id="delivery-type"></span></p>
+                    <p><strong>เวลาที่ต้องการรับ:</strong> <span id="delivery-time"></span></p>
+                    <p id="delivery-address-display"><strong>ที่อยู่:</strong> <span id="delivery-address"></span></p>
+                    <p><strong>ยอดชำระ:</strong> <span id="payment-amount"></span> บาท</p>
+                </div>
+
+                <!-- อัพโหลดสลิป -->
+                <div class="upload-slip" style="margin: 20px 0;">
+                    <h3 style="color: #333; margin-bottom: 10px;">แนบหลักฐานการโอนเงิน (สลิป)</h3>
+                    <input type="file" id="slip-file" accept="image/*" style="margin: 10px 0; padding: 10px; border: 2px dashed #667eea; border-radius: 5px; width: 100%;">
+                    <div id="slip-preview" style="margin-top: 10px;"></div>
+                </div>
+
+                <button class="btn-confirm" onclick="confirmPayment()">ยืนยันการชำระเงินและส่งออเดอร์</button>
+                <button class="btn-back" onclick="goBack()">กลับไปแก้ไขออเดอร์</button>
+
+                <div class="success-message" id="success-message">
+                    <h3>✅ ส่งออเดอร์สำเร็จ!</h3>
+                    <p>ออเดอร์ของคุณถูกส่งไปยังร้านค้าแล้ว</p>
+                    <p>กรุณารอสักครู่...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="payment.js"></script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+{
+  "shopOpen": true,
+  "shopName": "อิหล่าปลาเผา",
+  "shopPhone": "093-549-6234",
+  "shopLocation": "หน้าร้านทองเยาวราชนำโชค",
+  "deliveryArea": "ตำบลอากาศ",
+  "openingHours": {
+    "start": "09:00",
+    "end": "18:00"
+  },
+  "bankInfo": {
+    "bank": "กรุงไทย",
+    "accountNumber": "4440565999",
+    "accountName": "นรารักษ์ ชารัตน์"
+  },
+  "menu": [
+    {
+      "id": "grilled-plain",
+      "name": "ปลาเผา+น้ำจิ้ม",
+      "price": 120,
+      "enabled": true
+    },
+    {
+      "id": "grilled-veg",
+      "name": "ปลาเผา+ชุดผัก+น้ำจิ้ม",
+      "price": 180,
+      "enabled": true
+    }
+  ],
+  "adminPassword": "admin123",
+  "closedDates": []
+}

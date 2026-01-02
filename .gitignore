@@ -1,0 +1,15 @@
+node_modules/
+.env
+*.log
+.DS_Store
+package-lock.json
+
+# Data files
+data/orders.json
+
+# Uploaded files
+public/uploads/*
+!public/uploads/.gitkeep
+
+# Assets (QR code - อาจจะมีข้อมูลส่วนตัว)
+assets/qr-payment.*

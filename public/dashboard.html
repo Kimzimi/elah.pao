@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - จัดการออเดอร์ปลาเผา</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-card h3 {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .orders-container {
+            display: grid;
+            gap: 20px;
+        }
+
+        .order-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+        }
+
+        .order-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .order-id {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .status-badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-confirmed {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .status-completed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .order-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .detail-section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .detail-section h4 {
+            color: #666;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+        }
+
+        .detail-section p {
+            margin: 5px 0;
+            color: #333;
+        }
+
+        .items-list {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .items-list h4 {
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .item:last-child {
+            border-bottom: none;
+        }
+
+        .total {
+            font-weight: bold;
+            font-size: 1.2em;
+            color: #667eea;
+            margin-top: 10px;
+        }
+
+        .slip-preview {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .slip-preview img {
+            max-width: 300px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-confirm {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+        }
+
+        .btn-confirm:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+        }
+
+        .btn-complete {
+            background: linear-gradient(135deg, #007bff 0%, #6610f2 100%);
+            color: white;
+        }
+
+        .btn-complete:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 123, 255, 0.4);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: #666;
+        }
+
+        .no-orders {
+            text-align: center;
+            padding: 50px;
+            background: white;
+            border-radius: 15px;
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            .order-details {
+                grid-template-columns: 1fr;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎛️ Dashboard - จัดการออเดอร์ปลาเผา</h1>
+            <p>อิหล่าปลาเผา</p>
+        </header>
+
+        <div class="stats">
+            <div class="stat-card">
+                <h3>รอยืนยัน</h3>
+                <div class="value" id="pending-count">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>กำลังทำ</h3>
+                <div class="value" id="confirmed-count">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>เสร็จแล้ว</h3>
+                <div class="value" id="completed-count">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>ออเดอร์ทั้งหมด</h3>
+                <div class="value" id="total-count">0</div>
+            </div>
+        </div>
+
+        <div id="loading" class="loading">
+            กำลังโหลดข้อมูล...
+        </div>
+
+        <div id="orders-container" class="orders-container"></div>
+    </div>
+
+    <script>
+        // โหลดออเดอร์จาก API
+        async function loadOrders() {
+            try {
+                const response = await fetch('/api/orders');
+                const orders = await response.json();
+
+                document.getElementById('loading').style.display = 'none';
+
+                if (orders.length === 0) {
+                    document.getElementById('orders-container').innerHTML = '<div class="no-orders">ยังไม่มีออเดอร์</div>';
+                    return;
+                }
+
+                // อัพเดทสถิติ
+                const stats = {
+                    pending: orders.filter(o => o.status === 'pending').length,
+                    confirmed: orders.filter(o => o.status === 'confirmed').length,
+                    completed: orders.filter(o => o.status === 'completed').length
+                };
+
+                document.getElementById('pending-count').textContent = stats.pending;
+                document.getElementById('confirmed-count').textContent = stats.confirmed;
+                document.getElementById('completed-count').textContent = stats.completed;
+                document.getElementById('total-count').textContent = orders.length;
+
+                // แสดงออเดอร์
+                const container = document.getElementById('orders-container');
+                container.innerHTML = orders.map(order => createOrderCard(order)).join('');
+
+            } catch (error) {
+                console.error('Error loading orders:', error);
+                document.getElementById('loading').innerHTML = 'เกิดข้อผิดพลาดในการโหลดข้อมูล';
+            }
+        }
+
+        // สร้าง HTML สำหรับแสดงออเดอร์
+        function createOrderCard(order) {
+            const statusClass = `status-${order.status}`;
+            const statusText = {
+                'pending': '⏳ รอยืนยัน',
+                'confirmed': '🍳 กำลังทำ',
+                'completed': '✅ เสร็จแล้ว'
+            }[order.status];
+
+            const deliveryText = order.deliveryType === 'pickup' ? '🏪 รับเองที่ร้าน' : '🚚 จัดส่ง';
+
+            return `
+                <div class="order-card">
+                    <div class="order-header">
+                        <div class="order-id">📝 ${order.orderId}</div>
+                        <div class="status-badge ${statusClass}">${statusText}</div>
+                    </div>
+
+                    <div class="order-details">
+                        <div class="detail-section">
+                            <h4>ข้อมูลลูกค้า</h4>
+                            <p><strong>ชื่อ:</strong> ${order.customerName}</p>
+                            <p><strong>เบอร์:</strong> ${order.customerPhone}</p>
+                            <p><strong>เวลาสั่ง:</strong> ${new Date(order.createdAt).toLocaleString('th-TH')}</p>
+                        </div>
+
+                        <div class="detail-section">
+                            <h4>การจัดส่ง</h4>
+                            <p><strong>วิธีรับ:</strong> ${deliveryText}</p>
+                            <p><strong>เวลาที่ต้องการ:</strong> ${order.deliveryTime} น.</p>
+                            ${order.deliveryType === 'delivery' ? `<p><strong>ที่อยู่:</strong> ${order.deliveryAddress}</p>` : ''}
+                            ${order.note ? `<p><strong>หมายเหตุ:</strong> ${order.note}</p>` : ''}
+                        </div>
+                    </div>
+
+                    <div class="items-list">
+                        <h4>รายการสั่งซื้อ</h4>
+                        ${order.items.map(item => `
+                            <div class="item">
+                                <span>${item.name} x ${item.quantity}</span>
+                                <span>${item.total} บาท</span>
+                            </div>
+                        `).join('')}
+                        <div class="total">ยอดรวม: ${order.total} บาท</div>
+                    </div>
+
+                    <div class="slip-preview">
+                        <h4 style="margin-bottom: 10px;">สลิปการโอนเงิน</h4>
+                        <img src="${order.slipUrl}" alt="สลิป" onclick="window.open('${order.slipUrl}', '_blank')">
+                    </div>
+
+                    <div class="action-buttons">
+                        ${order.status === 'pending' ? `
+                            <button class="btn btn-confirm" onclick="updateOrderStatus('${order.orderId}', 'confirmed')">
+                                ✅ รับออเดอร์
+                            </button>
+                        ` : ''}
+                        ${order.status === 'confirmed' ? `
+                            <button class="btn btn-complete" onclick="updateOrderStatus('${order.orderId}', 'completed')">
+                                🎉 ออเดอร์เสร็จแล้ว
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        // อัพเดทสถานะออเดอร์
+        async function updateOrderStatus(orderId, status) {
+            if (!confirm(`คุณต้องการเปลี่ยนสถานะออเดอร์นี้ใช่หรือไม่?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/orders/${orderId}/status`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ status })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('อัพเดทสถานะสำเร็จ! ระบบได้แจ้งเตือนลูกค้าแล้ว');
+                    loadOrders(); // โหลดข้อมูลใหม่
+                } else {
+                    alert('เกิดข้อผิดพลาด: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
+            }
+        }
+
+        // โหลดข้อมูลเมื่อเปิดหน้า
+        loadOrders();
+
+        // รีเฟรชข้อมูลอัตโนมัติทุก 30 วินาที
+        setInterval(loadOrders, 30000);
+    </script>
+</body>
+</html>
