@@ -160,7 +160,7 @@
 
                 <!-- QR Code รูปภาพ -->
                 <div id="qr-code">
-                    <img id="qr-image" src="../assets/qr-payment.jpg" alt="QR Code ชำระเงิน" style="max-width: 300px; width: 100%;"
+                    <img id="qr-image" src="/assets/qr-payment.jpg" alt="QR Code ชำระเงิน" style="max-width: 300px; width: 100%;"
                          onerror="tryAlternativeQR(this)">
                 </div>
 
@@ -168,7 +168,7 @@
                 function tryAlternativeQR(img) {
                     // ลองหารูป .png ถ้า .jpg ไม่เจอ
                     if (img.src.includes('.jpg')) {
-                        img.src = '../assets/qr-payment.png';
+                        img.src = '/assets/qr-payment.png';
                     } else {
                         // ถ้าไม่เจอทั้ง .jpg และ .png แสดงข้อมูลบัญชี
                         img.style.display = 'none';
